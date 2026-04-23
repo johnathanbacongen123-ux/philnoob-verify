@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Verify — Philnoob</title>
+<script src="https://js.hcaptcha.com/1/api.js" async defer></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0a0a0a;
+    color: #e8e8e8;
+    font-family: 'Segoe UI', sans-serif;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+  }
+  .card {
+    background: #111;
+    border: 1px solid #1a1a1a;
+    border-radius: 14px;
+    padding: 40px 36px;
+    text-align: center;
+    max-width: 420px;
+    width: 90%;
+  }
+  .logo { font-size: 28px; font-weight: 800; color: #3dff6e; letter-spacing: 2px; margin-bottom: 8px; }
+  .sub  { font-size: 13px; color: #555; margin-bottom: 28px; }
+  .step { font-size: 14px; color: #aaa; margin-bottom: 20px; }
+  .captcha-wrap { display: flex; justify-content: center; margin-bottom: 24px; }
+  button {
+    background: #3dff6e;
+    color: #000;
+    border: none;
+    border-radius: 8px;
+    padding: 12px 32px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: background .2s;
+    width: 100%;
+  }
+  button:hover { background: #2acc58; }
+  button:disabled { background: #1a3a1a; color: #2a6e3a; cursor: not-allowed; }
+  .status { margin-top: 16px; font-size: 13px; min-height: 20px; }
+  .success { color: #3dff6e; }
+  .error   { color: #ef4444; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Philnoob</div>
+  <div class="sub">Server Verification</div>
+  <div class="step">Complete the captcha below to verify you're human</div>
+
+  <div class="captcha-wrap">
+    <div class="h-captcha"
+         data-sitekey="2eeeeb00-2ab2-4018-b01a-771206602b54"
+         data-callback="onCaptchaDone"
+         data-theme="dark">
+    </div>
+  </div>
+
+  <button id="submitBtn" disabled onclick="submitVerify()">Submit Verification</button>
+  <div class="status" id="status"></div>
+</div>
+
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const uid    = params.get("uid") || "";
+  let   token  = "";
+
+  function onCaptchaDone(t) {
+    token = t;
+    document.getElementById("submitBtn").disabled = false;
+  }
+
+  async function submitVerify() {
+    if (!token) return;
+
+    const btn    = document.getElementById("submitBtn");
+    const status = document.getElementById("status");
+
+    btn.disabled = true;
+    btn.textContent = "Verifying...";
+
+    try {
+      const res = await fetch("https://philnoob-verify-api.up.railway.app/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, uid })
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        status.className = "status success";
+        status.textContent = "✅ Verified! Go back to Discord and click I'm Done.";
+        btn.textContent = "Verified!";
+      } else {
+        status.className = "status error";
+        status.textContent = "❌ Verification failed. Please try again.";
+        btn.disabled = false;
+        btn.textContent = "Submit Verification";
+        hcaptcha.reset();
+        token = "";
+      }
+    } catch (e) {
+      status.className = "status error";
+      status.textContent = "❌ Error connecting. Please try again.";
+      btn.disabled = false;
+      btn.textContent = "Submit Verification";
+    }
+  }
+</script>
+</body>
+</html>
